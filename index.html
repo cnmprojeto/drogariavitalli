@@ -37,7 +37,7 @@
   <!-- ⚙️ Identidade da farmácia (edite aqui) -->
   <script>
     const NOME_FARMACIA = "Drogaria Vitalli";
-    const FARMACEUTICO_RESPONSAVEL = "Nome do Farmacêutico";
+    const FARMACEUTICO_RESPONSAVEL = "Franklin Santos Vieira";
     const CRF_NUMERO = "CRF-XX 00000";
   </script>
 
@@ -196,9 +196,25 @@
       <div class="flex flex-col items-center gap-1"><span class="text-xl">💳</span>Parcele em até 3 vezes</div>
       <div class="flex flex-col items-center gap-1"><span class="text-xl">◈</span>Pague com Pix</div>
     </div>
-    <div class="text-center py-6 px-4 text-[11px] text-gray-500">
+
+    <!-- Nova seção: Endereço e Horários de Entrega -->
+    <div class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-gray-600 border-b border-gray-100">
+      <div class="text-center md:text-left">
+        <p class="font-bold text-gray-700 mb-1">📍 Nosso Endereço</p>
+        <p>Rua Luziânia S/N Qd 26 Lt 12 Jofre</p>
+      </div>
+      <div class="text-center md:text-right">
+        <p class="font-bold text-gray-700 mb-1">🕥 Horários de Entrega</p>
+        <p>Segunda à Sexta: 7h às 21h</p>
+        <p>Sábados e Feriados: 8h às 18h</p>
+      </div>
+    </div>
+
+    <!-- Dados Jurídicos e Regulatórios -->
+    <div class="text-center py-6 px-4 text-[11px] text-gray-500 space-y-1">
       <p id="rodape-farmaceutico">Farmacêutico(a) Responsável: — CRF</p>
-      <p class="mt-1">Consulte sempre um médico ou farmacêutico antes de utilizar qualquer medicamento.</p>
+      <p>Razão Social: [Drogaria Vitalli] | CNPJ: [61.901.711/0001-21]</p>
+      <p class="pt-2 text-gray-400">Consulte sempre um médico ou farmacêutico antes de utilizar qualquer medicamento.</p>
     </div>
   </footer>
 
