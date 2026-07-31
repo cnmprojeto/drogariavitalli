@@ -56,10 +56,6 @@
   <!-- Header -->
   <header class="bg-brand shadow-sm sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center gap-3 flex-wrap sm:flex-nowrap">
-      <button onclick="document.getElementById('category-filters').scrollIntoView({behavior:'smooth'})" class="hidden sm:flex items-center gap-1.5 text-white/90 text-sm font-medium hover:text-white transition flex-shrink-0">
-        ☰ <span>Menu</span>
-      </button>
-
       <img id="header-logo" src="img/logo-vitalli.png" alt="Drogaria Vitalli" class="h-9 sm:h-10 w-auto object-contain flex-shrink-0 order-first sm:order-none mx-auto sm:mx-0" />
 
       <div class="relative flex-grow max-w-md order-3 sm:order-none w-full">
@@ -70,7 +66,7 @@
           placeholder="Que produto você deseja encontrar?"
           class="w-full bg-white rounded-full py-2 pl-4 pr-10 text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent text-gray-700"
         />
-        <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+        <button onclick="document.getElementById('catalogo-section').scrollIntoView({behavior:'smooth'})" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand text-sm" aria-label="Ir para o catálogo de produtos">🔍</button>
       </div>
 
       <button onclick="toggleCart()" class="relative bg-white text-brand px-4 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-brand-light transition text-sm flex-shrink-0 shadow-sm">
@@ -189,11 +185,6 @@
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="product-grid"></div>
-
-    <!-- Resultados de medicamentos sob prescrição — só aparecem quando pesquisados pelo nome -->
-    <div id="rx-section" class="hidden mt-8 border-t border-gray-200 pt-5 scroll-mt-24">
-      <div id="rx-list" class="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden bg-white"></div>
-    </div>
   </main>
 
   <!-- Rodapé com selos de confiança + dados obrigatórios do farmacêutico responsável (RDC 44/2009) -->
@@ -378,7 +369,7 @@ function renderHero() {
   container.innerHTML = heroSlides.map((slide, i) => `
     <div class="absolute inset-0 transition-opacity duration-700 ${i === heroIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}">
       <button onclick="${slide.ctaCategoria ? `irParaCategoria('${slide.ctaCategoria}')` : ''}" class="w-full h-full block ${slide.ctaCategoria ? 'cursor-pointer' : 'cursor-default'}">
-        ${renderMediaHtml(slide.mediaType, slide.mediaSrc, 'Destaque Drogaria Vitalli')}
+        ${renderMediaHtml(slide.mediaType, slide.mediaSrc, 'Destaque Drogaria Vitalli', 'contain')}
       </button>
     </div>
   `).join('');
@@ -1649,6 +1640,12 @@ let products = [
       }
     }
 
+    function correspondeReceitaNaBusca(product, searchTerm) {
+      if (searchTerm === '') return false;
+      const searchTarget = `${product.title} ${product.description} ${product.marca || ''}`.toLowerCase();
+      return searchTarget.includes(searchTerm);
+    }
+
     function renderProducts() {
       const grid = document.getElementById('product-grid');
       const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
@@ -1657,7 +1654,12 @@ let products = [
 
       let visibleCount = 0;
 
-      const produtosOrdenaveis = products.filter(p => p.requiresPrescription !== true);
+      // Medicamentos sob prescrição só entram na lista quando o termo de busca
+      // corresponde ao nome/descrição/marca deles — fora isso, ficam de fora
+      // da vitrine e dos filtros de categoria.
+      const produtosOrdenaveis = products.filter(p =>
+        p.requiresPrescription !== true || correspondeReceitaNaBusca(p, searchTerm)
+      );
       if (ordenacao === 'menor_preco') {
         produtosOrdenaveis.sort((a, b) => a.price - b.price);
       } else if (ordenacao === 'maior_preco') {
@@ -1668,7 +1670,10 @@ let products = [
       produtosOrdenaveis.forEach(product => {
         // Lógica para filtro de categoria + Mais Vendidos
         let matchesCategory = false;
-        if (activeCategory === 'todos') {
+        if (product.requiresPrescription === true) {
+          // Item de receita já filtrado pela busca acima — ignora a aba de categoria ativa.
+          matchesCategory = true;
+        } else if (activeCategory === 'todos') {
           matchesCategory = true;
         } else if (activeCategory === 'mais_vendidos') {
           matchesCategory = product.bestseller === true;
@@ -1711,6 +1716,7 @@ let products = [
 
               <div class="p-5 flex flex-col flex-grow">
                 ${product.marca ? `<span class="text-[10px] text-gray-400 uppercase tracking-wide font-medium mb-0.5">${product.marca}</span>` : ''}
+                ${product.requiresPrescription ? `<span class="inline-block text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded uppercase font-semibold mb-1 w-fit">Requer receita</span>` : ''}
                 <h3 class="font-bold text-gray-900 text-base mb-1">${product.title}</h3>
                 <p class="text-xs text-gray-500 mb-3 leading-relaxed">${product.description}</p>
 
@@ -1746,63 +1752,30 @@ let products = [
         }
       });
 
-      const rxCount = renderRxList();
-      document.getElementById('no-results').classList.toggle('hidden', (visibleCount + rxCount) > 0);
+      document.getElementById('no-results').classList.toggle('hidden', visibleCount > 0);
     }
 
-    // Lista simples de medicamentos sob prescrição — sem fotos, sem carrossel,
-    // sem selo promocional. Conforme regras da Anvisa, propaganda desses
-    // itens só é permitida a profissionais de saúde; ao público em geral,
-    // cabe apenas listagem informativa de preço.
-    // Só aparece quando o cliente pesquisa o nome do medicamento — não faz
-    // parte da vitrine inicial nem dos filtros de categoria.
-    // Retorna a quantidade de resultados encontrados (usado por renderProducts
-    // para decidir se mostra a mensagem de "nenhum produto encontrado").
-    function renderRxList() {
-      const section = document.getElementById('rx-section');
-      const list = document.getElementById('rx-list');
-      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
-
-      if (searchTerm === '') {
-        section.classList.add('hidden');
-        return 0;
-      }
-
-      const rxProducts = products.filter(p => {
-        if (p.requiresPrescription !== true) return false;
-        const searchTarget = `${p.title} ${p.description} ${p.marca || ''}`.toLowerCase();
-        return searchTarget.includes(searchTerm);
-      });
-
-      if (rxProducts.length === 0) {
-        section.classList.add('hidden');
-        return 0;
-      }
-
-      section.classList.remove('hidden');
-      list.innerHTML = rxProducts.map(product => `
-        <div class="flex items-center justify-between px-4 py-3 text-sm">
-          <div>
-            <span class="font-medium text-gray-800">${product.title}</span>
-            <span class="ml-2 text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded uppercase font-semibold">Requer receita</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="font-bold text-gray-700">R$ ${product.price.toFixed(2).replace('.', ',')}</span>
-            <button onclick="addToCart(${JSON.stringify(product.id)})" class="bg-brand-light text-brand px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-brand hover:text-white transition border border-blue-200">
-              Adicionar
-            </button>
-          </div>
-        </div>
-      `).join('');
-
-      return rxProducts.length;
+    // Gera uma imagem de reserva localmente (sem depender de nenhum serviço
+    // externo) para quando a foto do produto não carregar.
+    function gerarPlaceholderImagem(texto) {
+      const textoSeguro = String(texto || 'Produto')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const textoCurto = textoSeguro.length > 42 ? textoSeguro.slice(0, 39) + '...' : textoSeguro;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500" viewBox="0 0 400 500">
+        <rect width="400" height="500" fill="#EEF1FF"/>
+        <text x="200" y="235" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#011472" text-anchor="middle">${textoCurto}</text>
+        <text x="200" y="263" font-family="Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="middle">Sem imagem</text>
+      </svg>`;
+      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
     }
 
-    function renderMediaHtml(type, src, alt) {
+    function renderMediaHtml(type, src, alt, fit) {
+      const ajuste = fit === 'contain' ? 'object-contain' : 'object-cover';
+      const placeholder = gerarPlaceholderImagem(alt);
       if (type === 'video') {
-        return `<video src="${src}" controls autoplay class="w-full h-full object-cover rounded-xl"></video>`;
+        return `<video src="${src}" controls autoplay class="w-full h-full ${ajuste} rounded-xl" poster="${placeholder}"></video>`;
       }
-      return `<img src="${src}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x500/EEF1FF/011472?text=${encodeURIComponent(alt)}';" />`;
+      return `<img src="${src}" class="w-full h-full ${ajuste}" onerror="this.onerror=null; this.src='${placeholder}';" />`;
     }
 
     function selectSize(btn, productId, size) {
