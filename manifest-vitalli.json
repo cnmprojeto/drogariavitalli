@@ -1,0 +1,23 @@
+{
+  "name": "Drogaria Vitalli",
+  "short_name": "Vitalli",
+  "description": "Catálogo online da Drogaria Vitalli - Cuidar de você é a nossa prioridade!",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#011472",
+  "theme_color": "#011472",
+  "icons": [
+    {
+      "src": "img/icon-192-vitalli.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/icon-512-vitalli.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

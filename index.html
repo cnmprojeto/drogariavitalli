@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drogaria Vitalli - Catálogo Online</title>
+  <link rel="manifest" href="manifest-vitalli.json" />
+  <meta name="theme-color" content="#011472" />
+  <link rel="icon" href="img/favicon-32-vitalli.png" type="image/png" />
+  <link rel="apple-touch-icon" href="img/apple-touch-icon-vitalli.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#011472',
+              dark: '#010D52',
+              light: '#EEF1FF',
+              accent: '#EB071E',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+  <!-- ⚙️ Identidade da farmácia (edite aqui) -->
+  <script>
+    const NOME_FARMACIA = "Drogaria Vitalli";
+    const FARMACEUTICO_RESPONSAVEL = "Nome do Farmacêutico";
+    const CRF_NUMERO = "CRF-XX 00000";
+  </script>
+
+  <!-- Barra utilitária superior -->
+  <div class="bg-brand-dark text-white text-[11px]">
+    <div class="max-w-6xl mx-auto px-4 py-1.5 flex justify-center sm:justify-end gap-5">
+      <button onclick="document.getElementById('promo-section').scrollIntoView({behavior:'smooth'})" class="flex items-center gap-1 hover:opacity-80 transition">
+        🎟️ Ver cupons
+      </button>
+      <button onclick="acompanharPedido()" class="flex items-center gap-1 hover:opacity-80 transition">
+        📦 Acompanhar pedido
+      </button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-brand shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center gap-3 flex-wrap sm:flex-nowrap">
+      <button onclick="document.getElementById('category-filters').scrollIntoView({behavior:'smooth'})" class="hidden sm:flex items-center gap-1.5 text-white/90 text-sm font-medium hover:text-white transition flex-shrink-0">
+        ☰ <span>Menu</span>
+      </button>
+
+      <img id="header-logo" src="img/logo-vitalli.png" alt="Drogaria Vitalli" class="h-9 sm:h-10 w-auto object-contain flex-shrink-0 order-first sm:order-none mx-auto sm:mx-0" />
+
+      <div class="relative flex-grow max-w-md order-3 sm:order-none w-full">
+        <input
+          type="text"
+          id="search-input-header"
+          oninput="document.getElementById('search-input').value=this.value; renderProducts();"
+          placeholder="Que produto você deseja encontrar?"
+          class="w-full bg-white rounded-full py-2 pl-4 pr-10 text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent text-gray-700"
+        />
+        <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+      </div>
+
+      <button onclick="toggleCart()" class="relative bg-white text-brand px-4 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-brand-light transition text-sm flex-shrink-0 shadow-sm">
+        <span>🛒 Cesta</span>
+        <span id="cart-count" class="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 🎠 Carrossel Grande de Destaques (estilo "Festival da Beleza" da Rosário) -->
+  <section id="hero-carousel" class="relative overflow-hidden bg-brand">
+    <div id="hero-slides" class="relative h-[300px] sm:h-[360px]"></div>
+
+    <button onclick="heroNav(-1)" class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 text-brand font-bold shadow hover:bg-white transition flex items-center justify-center z-20">❮</button>
+    <button onclick="heroNav(1)" class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 text-brand font-bold shadow hover:bg-white transition flex items-center justify-center z-20">❯</button>
+
+    <div id="hero-dots" class="absolute bottom-4 left-0 w-full flex justify-center gap-2 z-20"></div>
+  </section>
+
+  <!-- 🗂️ Categorias em destaque (blocos estilo vitrine) -->
+  <section class="max-w-6xl mx-auto px-4 pt-8">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <button onclick="irParaCategoria('mais_vendidos')" class="text-left bg-brand rounded-2xl p-4 text-white flex flex-col justify-between h-28 hover:opacity-90 transition shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wide">Em Alta</span>
+        <span class="text-lg font-serif font-bold leading-tight">🏆 Mais<br/>Vendidos</span>
+      </button>
+      <button onclick="irParaCategoria('mip')" class="text-left bg-red-600 rounded-2xl p-4 text-white flex flex-col justify-between h-28 hover:opacity-90 transition shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wide">Até 40% OFF</span>
+        <span class="text-lg font-serif font-bold leading-tight">Farmácia &<br/>Imunidade</span>
+      </button>
+      <button onclick="irParaCategoria('higiene')" class="text-left bg-teal-600 rounded-2xl p-4 text-white flex flex-col justify-between h-28 hover:opacity-90 transition shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wide">Rotina</span>
+        <span class="text-lg font-serif font-bold leading-tight">Higiene &<br/>Cuidados</span>
+      </button>
+      <button onclick="irParaCategoria('perfumaria')" class="text-left bg-purple-700 rounded-2xl p-4 text-white flex flex-col justify-between h-28 hover:opacity-90 transition shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wide">Selecionados</span>
+        <span class="text-lg font-serif font-bold leading-tight">Perfumaria</span>
+      </button>
+      <button onclick="irParaCategoria('conveniencia')" class="text-left bg-amber-600 rounded-2xl p-4 text-white flex flex-col justify-between h-28 hover:opacity-90 transition shadow-sm">
+        <span class="text-[11px] font-bold uppercase tracking-wide">Praticidade</span>
+        <span class="text-lg font-serif font-bold leading-tight">Conveniência</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- 🎯 CARROSSEL DE DESTAQUES (PROMOÇÕES) -->
+  <section id="promo-section" class="max-w-6xl mx-auto px-4 pt-8">
+    <div class="flex items-center justify-between mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🔥</span>
+        <h3 class="text-lg font-bold text-brand font-serif">Ofertas Imperdíveis</h3>
+      </div>
+
+      <!-- Setas de Navegação -->
+      <div class="flex gap-2">
+        <button onclick="scrollPromo(-1)" class="w-8 h-8 rounded-full bg-white border border-blue-200 text-brand font-bold shadow-sm hover:bg-brand hover:text-white transition flex items-center justify-center">
+          ❮
+        </button>
+        <button onclick="scrollPromo(1)" class="w-8 h-8 rounded-full bg-white border border-blue-200 text-brand font-bold shadow-sm hover:bg-brand hover:text-white transition flex items-center justify-center">
+          ❯
+        </button>
+      </div>
+    </div>
+
+    <div id="promo-container" class="flex gap-4 overflow-x-auto scroll-smooth scrollbar-none py-2 snap-x snap-mandatory">
+      <!-- Gerado via JS -->
+    </div>
+  </section>
+
+  <!-- Busca e Filtros de Categorias -->
+  <div id="catalogo-section" class="max-w-6xl mx-auto px-4 pt-8 pb-2 space-y-3">
+    <h3 class="text-base font-bold text-gray-800 font-serif">Catálogo de Produtos</h3>
+    <div class="flex gap-2 items-center flex-wrap">
+      <div class="relative max-w-md flex-grow">
+        <input
+          type="text"
+          id="search-input"
+          oninput="document.getElementById('search-input-header').value=this.value; renderProducts();"
+          placeholder="🔍 Buscar produto, princípio ativo ou marca..."
+          class="w-full bg-white border border-blue-200 rounded-full py-2.5 px-4 text-xs shadow-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand text-gray-700"
+        />
+      </div>
+
+      <select
+        id="sort-select"
+        onchange="renderProducts()"
+        class="bg-white border border-blue-200 rounded-full py-2.5 px-4 text-xs shadow-sm focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand text-gray-700 flex-shrink-0"
+      >
+        <option value="relevancia">Ordenar por: Relevância</option>
+        <option value="menor_preco">Menor preço</option>
+        <option value="maior_preco">Maior preço</option>
+      </select>
+
+      <button onclick="toggleFiltros()" class="relative bg-white border border-blue-200 text-brand px-4 py-2.5 rounded-full text-xs font-medium shadow-sm hover:bg-brand-light transition flex-shrink-0 flex items-center gap-1.5">
+        <span>⚙️ Filtros</span>
+        <span id="filtros-count" class="hidden bg-brand text-white text-[10px] w-4 h-4 rounded-full items-center justify-center"></span>
+      </button>
+    </div>
+
+    <!-- Botões de Categoria (Incluindo 'Mais Vendidos') -->
+    <div class="flex gap-2 overflow-x-auto pb-2 text-xs font-medium scrollbar-none" id="category-filters">
+      <button data-cat="todos" onclick="selectCategory('todos', this)" class="cat-btn bg-brand text-white px-4 py-2 rounded-full whitespace-nowrap shadow-sm border border-brand">Todos os Produtos</button>
+      <button data-cat="mais_vendidos" onclick="selectCategory('mais_vendidos', this)" class="cat-btn bg-white text-gray-600 hover:bg-brand-light px-4 py-2 rounded-full border border-gray-200 whitespace-nowrap flex items-center gap-1">🏆 Mais Vendidos</button>
+      <button data-cat="mip" onclick="selectCategory('mip', this)" class="cat-btn bg-white text-gray-600 hover:bg-brand-light px-4 py-2 rounded-full border border-gray-200 whitespace-nowrap">Medicamentos (Isentos)</button>
+      <button data-cat="perfumaria" onclick="selectCategory('perfumaria', this)" class="cat-btn bg-white text-gray-600 hover:bg-brand-light px-4 py-2 rounded-full border border-gray-200 whitespace-nowrap">Perfumaria</button>
+      <button data-cat="higiene" onclick="selectCategory('higiene', this)" class="cat-btn bg-white text-gray-600 hover:bg-brand-light px-4 py-2 rounded-full border border-gray-200 whitespace-nowrap">Higiene & Cuidados</button>
+      <button data-cat="conveniencia" onclick="selectCategory('conveniencia', this)" class="cat-btn bg-white text-gray-600 hover:bg-brand-light px-4 py-2 rounded-full border border-gray-200 whitespace-nowrap">Conveniência</button>
+    </div>
+  </div>
+
+  <!-- Vitrine Geral -->
+  <main class="max-w-6xl mx-auto px-4 py-4">
+    <div id="no-results" class="hidden text-center py-12 text-gray-500 text-sm">
+      <p class="font-bold text-gray-700 text-base mb-1">Nenhum produto encontrado 😞</p>
+      <p>Tente buscar por outro termo ou selecione outra categoria.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="product-grid"></div>
+
+    <!-- Resultados de medicamentos sob prescrição — só aparecem quando pesquisados pelo nome -->
+    <div id="rx-section" class="hidden mt-8 border-t border-gray-200 pt-5 scroll-mt-24">
+      <div id="rx-list" class="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden bg-white"></div>
+    </div>
+  </main>
+
+  <!-- Rodapé com selos de confiança + dados obrigatórios do farmacêutico responsável (RDC 44/2009) -->
+  <footer class="bg-white border-t border-gray-200 mt-8">
+    <div class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-2 sm:grid-cols-5 gap-4 text-center text-[11px] text-gray-600 border-b border-gray-100">
+      <div class="flex flex-col items-center gap-1"><span class="text-xl">🚚</span>Entrega em até 2 horas</div>
+      <div class="flex flex-col items-center gap-1"><span class="text-xl">⚡</span>Clique e retire em 30 minutos</div>
+      <div class="flex flex-col items-center gap-1"><span class="text-xl">💊</span>Farmacêutico sempre disponível</div>
+      <div class="flex flex-col items-center gap-1"><span class="text-xl">💳</span>Parcele em até 3 vezes</div>
+      <div class="flex flex-col items-center gap-1"><span class="text-xl">◈</span>Pague com Pix</div>
+    </div>
+    <div class="text-center py-6 px-4 text-[11px] text-gray-500">
+      <p id="rodape-farmaceutico">Farmacêutico(a) Responsável: — CRF</p>
+      <p class="mt-1">Consulte sempre um médico ou farmacêutico antes de utilizar qualquer medicamento.</p>
+    </div>
+  </footer>
+
+  <!-- Painel Lateral de Filtros (Marca / Tamanho / Faixa de Preço) -->
+  <div id="filtros-overlay" onclick="toggleFiltros()" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50"></div>
+  <aside id="filtros-drawer" class="fixed top-0 left-0 h-full w-[85%] max-w-xs bg-white z-50 shadow-xl -translate-x-full transition-transform duration-300 flex flex-col">
+    <div class="flex justify-between items-center px-5 py-4 border-b border-gray-100">
+      <h3 class="text-lg font-bold text-gray-900 font-serif">Filtrar produtos</h3>
+      <button onclick="toggleFiltros()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+    </div>
+
+    <div class="flex-grow overflow-y-auto px-5 py-4 space-y-6 text-sm">
+      <div>
+        <span class="font-bold text-gray-800 block mb-2">Faixa de Preço</span>
+        <div class="space-y-1.5" id="filtro-preco-opcoes">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="filtro_preco" value="todos" checked onchange="setFiltroPreco(this.value)" class="accent-brand" />
+            <span>Todos os preços</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="filtro_preco" value="ate20" onchange="setFiltroPreco(this.value)" class="accent-brand" />
+            <span>Até R$ 20,00</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="filtro_preco" value="20-50" onchange="setFiltroPreco(this.value)" class="accent-brand" />
+            <span>R$ 20,00 a R$ 50,00</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="filtro_preco" value="50-100" onchange="setFiltroPreco(this.value)" class="accent-brand" />
+            <span>R$ 50,00 a R$ 100,00</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="filtro_preco" value="acima100" onchange="setFiltroPreco(this.value)" class="accent-brand" />
+            <span>Acima de R$ 100,00</span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <span class="font-bold text-gray-800 block mb-2">Marca</span>
+        <div class="space-y-1.5" id="filtro-marcas-opcoes">
+          <p class="text-xs text-gray-400">Nenhuma marca cadastrada.</p>
+        </div>
+      </div>
+
+      <div>
+        <span class="font-bold text-gray-800 block mb-2">Apresentação / Tamanho</span>
+        <div class="space-y-1.5" id="filtro-tamanhos-opcoes">
+          <p class="text-xs text-gray-400">Nenhuma apresentação cadastrada.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-gray-100 p-4 flex gap-2">
+      <button onclick="limparFiltros()" class="w-1/2 bg-gray-100 text-gray-700 py-2.5 rounded-xl font-medium hover:bg-gray-200 transition text-xs">
+        Limpar
+      </button>
+      <button onclick="aplicarFiltros()" class="w-1/2 bg-brand text-white py-2.5 rounded-xl font-bold hover:bg-brand-dark transition text-xs shadow-sm">
+        Ver Resultados
+      </button>
+    </div>
+  </aside>
+
+  <!-- Modal Carrinho -->
+  <div id="cart-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl relative flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center mb-4 border-b pb-3">
+        <h3 class="text-xl font-bold text-gray-900 font-serif">Sua Cesta</h3>
+        <button onclick="toggleCart()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+      </div>
+
+      <div class="mb-4 bg-brand-light p-3 rounded-xl border border-blue-100 text-xs">
+        <span class="font-bold text-gray-800 block mb-1">Como deseja receber seu pedido?</span>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="delivery_type" value="Retirar na Loja" checked class="text-brand accent-brand" />
+            <span>Retirar na Loja</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="delivery_type" value="Entrega Local" class="text-brand accent-brand" />
+            <span>Entrega Local</span>
+          </label>
+        </div>
+      </div>
+
+      <div id="cart-items" class="space-y-3 overflow-y-auto mb-4 text-xs flex-grow pr-1"></div>
+
+      <div id="rx-warning" class="hidden mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] p-3 rounded-xl">
+        ⚠️ Seu pedido inclui item(ns) que exigem receita médica. Depois de enviar, anexe uma <b>foto legível da receita</b> na própria conversa do WhatsApp — o farmacêutico responsável vai validar antes de confirmar a entrega.
+      </div>
+
+      <div class="border-t pt-4 flex justify-between items-center font-bold text-base mb-6">
+        <span>Total:</span>
+        <span id="cart-total" class="text-brand text-lg">R$ 0,00</span>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="toggleCart()" class="w-1/2 bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 transition text-xs">
+          Continuar Comprando
+        </button>
+        <button onclick="checkout()" class="w-1/2 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-1 text-xs shadow-md">
+          <span>Enviar p/ WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notice -->
+  <div id="toast-added" class="fixed bottom-5 right-5 bg-brand text-white px-4 py-3 rounded-xl shadow-lg text-xs flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 z-40">
+    <span>Item adicionado à cesta!</span>
+    <button onclick="toggleCart()" class="underline font-bold text-blue-200">Ver Cesta</button>
+  </div>
+
+  <!-- LÓGICA E DADOS DO SITE (TUDO EM UM ÚNICO ARQUIVO) -->
+  <script>
+    // =========================================================================
+    // 🛍️ CADASTRO DE PRODUTOS
+    // =========================================================================
+    // • promo: true (Aparece no carrossel superior de Ofertas)
+    // • bestseller: true (Aparece na categoria "Mais Vendidos" e ganha selo)
+    // • requiresPrescription: true (Some do catálogo comum e vira listagem simples)
+    // =========================================================================
+
+// =========================================================================
+// ⚙️ CONFIGURAÇÃO — troque pelos seus dados
+// =========================================================================
+// 1. Número do WhatsApp que vai receber os pedidos (com DDI+DDD, só números)
+const WHATSAPP_NUMERO = "5561998428280";
+
+// 2. Link da planilha Google publicada como CSV (Arquivo > Compartilhar >
+//    Publicar na Web > selecionar a aba de produtos > formato CSV).
+//    Deixe em branco ("") para usar os produtos de exemplo abaixo.
+const PLANILHA_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQR-0qFC53gYWSu-dPTl8-6955M1oJb3ThnvUcT9jErpMUFaLlPCPkBqFwKKTKlHx02dQSR-BWCKqZ/pub?gid=0&single=true&output=csv";
+
+// 3. Link da planilha (aba separada) com os slides do carrossel grande.
+//    Publique essa aba também como CSV. Deixe em branco ("") para usar
+//    os destaques de exemplo abaixo.
+const PLANILHA_DESTAQUES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQR-0qFC53gYWSu-dPTl8-6955M1oJb3ThnvUcT9jErpMUFaLlPCPkBqFwKKTKlHx02dQSR-BWCKqZ/pub?gid=181892494&single=true&output=csv";
+
+// =========================================================================
+// 🎠 SLIDES DO CARROSSEL GRANDE (topo da página, estilo "Festival da Beleza")
+// =========================================================================
+// Usados só se PLANILHA_DESTAQUES_CSV_URL estiver vazio. Colunas equivalentes
+// na planilha: midia_tipo, midia_url, cta_categoria
+// • mediaType: "img" ou "video"
+// • mediaSrc: link da imagem/vídeo (a arte com texto e promoção já pronta)
+// • ctaCategoria: categoria para onde o slide leva ao ser clicado (opcional —
+//   use um dos valores de "category" cadastrados nos produtos, "mais_vendidos",
+//   ou deixe em branco/"" para o slide não ser clicável)
+// =========================================================================
+let heroSlides = [
+  { mediaType: "img", mediaSrc: "destaque_imunidade.jpg", ctaCategoria: "mip" },
+  { mediaType: "img", mediaSrc: "destaque_skincare.jpg", ctaCategoria: "higiene" },
+  { mediaType: "img", mediaSrc: "destaque_mais_vendidos.jpg", ctaCategoria: "mais_vendidos" }
+];
+
+// =========================================================================
+// 🎠 RENDERIZAÇÃO E NAVEGAÇÃO DO CARROSSEL GRANDE DE DESTAQUES
+// =========================================================================
+let heroIndex = 0;
+let heroTimer = null;
+
+function renderHero() {
+  const container = document.getElementById('hero-slides');
+  const dots = document.getElementById('hero-dots');
+  if (!container || heroSlides.length === 0) return;
+
+  container.innerHTML = heroSlides.map((slide, i) => `
+    <div class="absolute inset-0 transition-opacity duration-700 ${i === heroIndex ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}">
+      <button onclick="${slide.ctaCategoria ? `irParaCategoria('${slide.ctaCategoria}')` : ''}" class="w-full h-full block ${slide.ctaCategoria ? 'cursor-pointer' : 'cursor-default'}">
+        ${renderMediaHtml(slide.mediaType, slide.mediaSrc, 'Destaque Drogaria Vitalli')}
+      </button>
+    </div>
+  `).join('');
+
+  dots.innerHTML = heroSlides.map((_, i) => `
+    <button onclick="goToHeroSlide(${i})" aria-label="Ir para o destaque ${i + 1}" class="w-2.5 h-2.5 rounded-full transition ${i === heroIndex ? 'bg-white' : 'bg-white/40'}"></button>
+  `).join('');
+}
+
+function heroNav(direction) {
+  heroIndex = (heroIndex + direction + heroSlides.length) % heroSlides.length;
+  renderHero();
+  resetHeroTimer();
+}
+
+function goToHeroSlide(i) {
+  heroIndex = i;
+  renderHero();
+  resetHeroTimer();
+}
+
+function resetHeroTimer() {
+  clearInterval(heroTimer);
+  if (heroSlides.length > 1) {
+    heroTimer = setInterval(() => heroNav(1), 6000);
+  }
+}
+
+// =========================================================================
+// 🛍️ PRODUTOS DE EXEMPLO (usados só se PLANILHA_CSV_URL estiver vazio)
+// =========================================================================
+let products = [
+  {
+    id: 1,
+    title: "Dipirona Monoidratada 500mg (10 comp.)",
+    category: "mip",
+    marca: "Neo Química",
+    price: 8.90,
+    promo: false,
+    bestseller: true,
+    requiresPrescription: false,
+    description: "Analgésico e antitérmico. Alívio de dores leves a moderadas e febre.",
+    sizes: ["Caixa 10 comp."],
+    mediaType: "img",
+    mediaSrc: "dipirona.jpg",
+    disponivel: true
+  },
+  {
+    id: 2,
+    title: "Protetor Solar Facial FPS 60",
+    category: "higiene",
+    marca: "La Roche-Posay",
+    price: 54.90,
+    oldPrice: 69.90,
+    promo: true,
+    promoTag: "OFERTA",
+    bestseller: true,
+    requiresPrescription: false,
+    description: "Toque seco, indicado para uso diário no rosto. Resistente à água.",
+    sizes: ["50g"],
+    mediaType: "img",
+    mediaSrc: "protetor_solar.jpg",
+    disponivel: true
+  },
+  {
+    id: 3,
+    title: "Perfume Desodorante Corporal",
+    category: "perfumaria",
+    marca: "O Boticário",
+    price: 39.90,
+    promo: false,
+    bestseller: false,
+    requiresPrescription: false,
+    description: "Fragrância suave de longa duração.",
+    sizes: ["100ml"],
+    mediaType: "img",
+    mediaSrc: "perfume.jpg",
+    disponivel: true
+  },
+  {
+    id: 4,
+    title: "Álcool em Gel 70% 500ml",
+    category: "conveniencia",
+    marca: "Start",
+    price: 12.90,
+    promo: false,
+    bestseller: true,
+    requiresPrescription: false,
+    description: "Higienização das mãos, ação antisséptica.",
+    sizes: ["500ml"],
+    mediaType: "img",
+    mediaSrc: "alcool_gel.jpg",
+    disponivel: true
+  },
+  {
+    id: 5,
+    title: "Vitamina C 1g Efervescente (10 comp.)",
+    category: "mip",
+    marca: "Redoxon",
+    price: 22.90,
+    promo: true,
+    promoTag: "IMUNIDADE",
+    bestseller: false,
+    requiresPrescription: false,
+    description: "Suplemento vitamínico para reforço da imunidade.",
+    sizes: ["Tubo 10 comp."],
+    mediaType: "img",
+    mediaSrc: "vitamina_c.jpg",
+    disponivel: true
+  },
+  {
+    id: 6,
+    title: "Losartana Potássica 50mg (30 comp.) — Sob Prescrição",
+    category: "receita",
+    marca: "EMS",
+    price: 18.50,
+    promo: false,
+    bestseller: false,
+    requiresPrescription: true,
+    description: "Anti-hipertensivo. Venda exclusiva mediante apresentação de receita médica.",
+    sizes: ["Caixa 30 comp."],
+    mediaType: "img",
+    mediaSrc: "",
+    disponivel: true
+  }
+];
+
+
+    // Estados da Aplicação
+    let cart = JSON.parse(localStorage.getItem('carrinho_vitalli') || '[]');
+    let selectedSizes = {};
+    let filtros = { marcas: new Set(), tamanhos: new Set(), faixaPreco: 'todos' };
+    let activeCategory = 'todos';
+
+    // =========================================================================
+    // 📊 CARREGAMENTO DOS PRODUTOS (via planilha Google, se configurada)
+    // =========================================================================
+    function normalizarBool(valor) {
+      return String(valor || '').trim().toLowerCase() === 'sim';
+    }
+
+    async function carregarProdutosDaPlanilha(url) {
+      // Adiciona um parâmetro variável na URL pra evitar que o navegador ou o
+      // Google Sheets sirvam uma cópia antiga (em cache) da planilha.
+      const separador = url.includes('?') ? '&' : '?';
+      const urlSemCache = `${url}${separador}_cb=${Date.now()}`;
+      const resposta = await fetch(urlSemCache, { cache: 'no-store' });
+      const textoCsv = await resposta.text();
+      const resultado = Papa.parse(textoCsv, { header: true, skipEmptyLines: true });
+
+      return resultado.data
+        .filter(linha => (linha.id || '').trim() !== '')
+        .map(linha => ({
+          id: (linha.id || '').trim(),
+          title: linha.titulo || 'Produto sem nome',
+          category: (linha.categoria || '').trim(),
+          marca: (linha.marca || '').trim(),
+          price: parseFloat((linha.preco || '0').replace(',', '.')) || 0,
+          oldPrice: linha.preco_antigo ? (parseFloat(linha.preco_antigo.replace(',', '.')) || null) : null,
+          promo: normalizarBool(linha.promo),
+          promoTag: linha.promo_tag || '',
+          bestseller: normalizarBool(linha.bestseller),
+          requiresPrescription: normalizarBool(linha.requer_receita),
+          description: linha.descricao || '',
+          sizes: (linha.tamanhos || '').split(',').map(s => s.trim()).filter(Boolean),
+          mediaType: String(linha.midia_tipo || 'foto').toLowerCase() === 'video' ? 'video' : 'img',
+          mediaSrc: linha.midia_url || '',
+          disponivel: linha.disponivel === undefined || linha.disponivel === '' ? true : normalizarBool(linha.disponivel)
+        }));
+    }
+
+    // =========================================================================
+    // 🎠 CARREGAMENTO DOS DESTAQUES DO CARROSSEL (via planilha Google, se configurada)
+    // =========================================================================
+    async function carregarDestaquesDaPlanilha(url) {
+      const separador = url.includes('?') ? '&' : '?';
+      const urlSemCache = `${url}${separador}_cb=${Date.now()}`;
+      const resposta = await fetch(urlSemCache, { cache: 'no-store' });
+      const textoCsv = await resposta.text();
+      const resultado = Papa.parse(textoCsv, { header: true, skipEmptyLines: true });
+
+      return resultado.data
+        .filter(linha => (linha.midia_url || '').trim() !== '')
+        .map(linha => ({
+          mediaType: String(linha.midia_tipo || 'foto').toLowerCase() === 'video' ? 'video' : 'img',
+          mediaSrc: linha.midia_url || '',
+          ctaCategoria: (linha.cta_categoria || '').trim()
+        }));
+    }
+
+    async function inicializarDestaques() {
+      if (PLANILHA_DESTAQUES_CSV_URL && PLANILHA_DESTAQUES_CSV_URL.trim() !== '') {
+        try {
+          const carregados = await carregarDestaquesDaPlanilha(PLANILHA_DESTAQUES_CSV_URL);
+          if (carregados.length > 0) heroSlides = carregados;
+        } catch (erro) {
+          console.error('Erro ao carregar os destaques do carrossel:', erro);
+          // Mantém os destaques de exemplo (heroSlides) como reserva.
+        }
+      }
+      heroIndex = 0;
+      renderHero();
+      resetHeroTimer();
+    }
+
+    async function inicializarProdutos() {
+      if (PLANILHA_CSV_URL && PLANILHA_CSV_URL.trim() !== '') {
+        try {
+          products = await carregarProdutosDaPlanilha(PLANILHA_CSV_URL);
+        } catch (erro) {
+          console.error('Erro ao carregar a planilha de produtos:', erro);
+          document.getElementById('product-grid').innerHTML =
+            '<p class="col-span-full text-center text-red-500 text-sm py-10">Não foi possível carregar o catálogo agora. Tente novamente em instantes.</p>';
+          return;
+        }
+      }
+
+      montarOpcoesDeFiltro();
+      renderPromotions();
+      renderProducts();
+      updateCart();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.title = `${NOME_FARMACIA} - Catálogo Online`;
+      const rodapeInfo = document.getElementById('rodape-farmaceutico');
+      if (rodapeInfo) rodapeInfo.innerText = `Farmacêutico(a) Responsável: ${FARMACEUTICO_RESPONSAVEL} — ${CRF_NUMERO}`;
+      inicializarDestaques();
+      inicializarProdutos();
+    });
+
+    // 1. CARROSSEL DE PROMOÇÕES
+    function renderPromotions() {
+      const container = document.getElementById('promo-container');
+      const section = document.getElementById('promo-section');
+      const promoProducts = products.filter(p => p.promo === true && p.requiresPrescription !== true);
+
+      if (promoProducts.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      container.innerHTML = promoProducts.map(product => {
+        return `
+          <div class="min-w-[280px] sm:min-w-[320px] max-w-[320px] bg-white rounded-2xl border-2 border-blue-100 p-3 shadow-sm snap-start relative flex flex-col">
+            <span class="absolute top-5 left-5 bg-red-600 text-white font-bold text-[10px] px-2.5 py-1 rounded-full z-10 uppercase tracking-wider shadow">
+              ${product.promoTag || 'PROMOÇÃO'}
+            </span>
+
+            <div class="h-48 bg-brand-light rounded-xl overflow-hidden mb-3 relative flex items-center justify-center">
+              ${renderMediaHtml(product.mediaType, product.mediaSrc, product.title)}
+            </div>
+
+            <h4 class="font-bold text-gray-800 text-sm mb-1 truncate">${product.title}</h4>
+            ${product.marca ? `<span class="text-[10px] text-gray-400 mb-1 block">${product.marca}</span>` : ''}
+
+            <div class="flex items-baseline gap-2 mb-3">
+              <span class="text-lg font-bold text-red-600">R$ ${product.price.toFixed(2).replace('.', ',')}</span>
+              ${product.oldPrice ? `<span class="text-xs text-gray-400 line-through">R$ ${product.oldPrice.toFixed(2).replace('.', ',')}</span>` : ''}
+            </div>
+
+            <button onclick="scrollToProduct(${product.id})" class="w-full mt-auto bg-brand-light text-brand hover:bg-brand hover:text-white transition font-bold py-2 rounded-xl text-xs border border-blue-200">
+              Ver Detalhes / Comprar
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function scrollPromo(direction) {
+      const container = document.getElementById('promo-container');
+      container.scrollBy({ left: direction * 300, behavior: 'smooth' });
+    }
+
+    function scrollToProduct(productId) {
+      const el = document.getElementById(`product-card-${productId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('ring-2', 'ring-brand');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-brand'), 2000);
+      }
+    }
+
+    // Usado pelos blocos de categoria em destaque no topo da página
+    function irParaCategoria(categoria) {
+      const btn = document.querySelector(`.cat-btn[data-cat="${categoria}"]`);
+      if (btn) selectCategory(categoria, btn);
+      document.getElementById('catalogo-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 2. VITRINE GERAL
+    function faixaPrecoCorresponde(preco) {
+      switch (filtros.faixaPreco) {
+        case 'ate20': return preco <= 20;
+        case '20-50': return preco > 20 && preco <= 50;
+        case '50-100': return preco > 50 && preco <= 100;
+        case 'acima100': return preco > 100;
+        default: return true; // 'todos'
+      }
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById('product-grid');
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+      const ordenacao = document.getElementById('sort-select').value;
+      grid.innerHTML = '';
+
+      let visibleCount = 0;
+
+      const produtosOrdenaveis = products.filter(p => p.requiresPrescription !== true);
+      if (ordenacao === 'menor_preco') {
+        produtosOrdenaveis.sort((a, b) => a.price - b.price);
+      } else if (ordenacao === 'maior_preco') {
+        produtosOrdenaveis.sort((a, b) => b.price - a.price);
+      }
+      // "relevancia" mantém a ordem original (a mesma da planilha/cadastro)
+
+      produtosOrdenaveis.forEach(product => {
+        // Lógica para filtro de categoria + Mais Vendidos
+        let matchesCategory = false;
+        if (activeCategory === 'todos') {
+          matchesCategory = true;
+        } else if (activeCategory === 'mais_vendidos') {
+          matchesCategory = product.bestseller === true;
+        } else {
+          matchesCategory = (product.category === activeCategory);
+        }
+
+        const searchTarget = `${product.title} ${product.description} ${product.marca || ''}`.toLowerCase();
+        const matchesSearch = searchTerm === '' || searchTarget.includes(searchTerm);
+
+        const matchesMarca = filtros.marcas.size === 0 || filtros.marcas.has(product.marca || '');
+        const matchesTamanho = filtros.tamanhos.size === 0 || (product.sizes || []).some(s => filtros.tamanhos.has(s));
+        const matchesPreco = faixaPrecoCorresponde(product.price);
+
+        if (matchesCategory && matchesSearch && matchesMarca && matchesTamanho && matchesPreco) {
+          visibleCount++;
+          const indisponivel = product.disponivel === false;
+
+          grid.innerHTML += `
+            <div id="product-card-${product.id}" class="product-card bg-white rounded-2xl border border-blue-100 overflow-hidden hover:shadow-md transition flex flex-col relative">
+
+              <!-- Selo Mais Vendido / Esgotado -->
+              ${product.bestseller ? `
+                <span class="absolute top-4 left-4 bg-amber-500 text-white font-bold text-[10px] px-2.5 py-1 rounded-full z-10 uppercase shadow-sm flex items-center gap-1">
+                  🏆 Mais Vendido
+                </span>
+              ` : ''}
+              ${indisponivel ? `
+                <span class="absolute top-4 right-4 bg-gray-700 text-white font-bold text-[10px] px-2.5 py-1 rounded-full z-10 uppercase shadow-sm">
+                  Esgotado
+                </span>
+              ` : ''}
+
+              <!-- Foto do Produto -->
+              <div class="h-72 bg-brand-light relative overflow-hidden flex flex-col justify-between p-2">
+                <div class="w-full h-full rounded-xl overflow-hidden relative bg-white flex items-center justify-center">
+                  ${renderMediaHtml(product.mediaType, product.mediaSrc, product.title)}
+                </div>
+              </div>
+
+              <div class="p-5 flex flex-col flex-grow">
+                ${product.marca ? `<span class="text-[10px] text-gray-400 uppercase tracking-wide font-medium mb-0.5">${product.marca}</span>` : ''}
+                <h3 class="font-bold text-gray-900 text-base mb-1">${product.title}</h3>
+                <p class="text-xs text-gray-500 mb-3 leading-relaxed">${product.description}</p>
+
+                <!-- Seleção de Tamanho -->
+                <div class="mb-4" id="size-group-${product.id}">
+                  <span class="text-[11px] text-gray-400 font-medium block mb-1">Apresentação:</span>
+                  <div class="flex gap-1.5 flex-wrap">
+                    ${product.sizes.map(size => `
+                      <button onclick="selectSize(this, ${product.id}, '${size}')"
+                              class="size-btn-${product.id} border ${selectedSizes[product.id] === size ? 'bg-brand text-white border-brand' : 'border-gray-200'} text-xs px-3 py-1 rounded hover:border-brand">
+                        ${size}
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <!-- Valor e Botão Adicionar -->
+                <div class="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
+                  <div>
+                    <span class="text-[10px] text-gray-400 block uppercase">Valor</span>
+                    <div class="flex items-baseline gap-1.5">
+                      <span class="text-lg font-bold text-brand">R$ ${product.price.toFixed(2).replace('.', ',')}</span>
+                      ${product.oldPrice ? `<span class="text-xs text-gray-400 line-through">R$ ${product.oldPrice.toFixed(2).replace('.', ',')}</span>` : ''}
+                    </div>
+                  </div>
+                  <button onclick="addToCart(${product.id})" ${indisponivel ? 'disabled' : ''} class="bg-brand text-white px-4 py-2 rounded-xl text-xs font-medium hover:bg-brand-dark transition shadow-sm ${indisponivel ? 'opacity-40 cursor-not-allowed' : ''}">
+                    ${indisponivel ? 'Esgotado' : 'Adicionar'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      document.getElementById('no-results').classList.toggle('hidden', visibleCount > 0);
+      renderRxList();
+    }
+
+    // Lista simples de medicamentos sob prescrição — sem fotos, sem carrossel,
+    // sem selo promocional. Conforme regras da Anvisa, propaganda desses
+    // itens só é permitida a profissionais de saúde; ao público em geral,
+    // cabe apenas listagem informativa de preço.
+    // Só aparece quando o cliente pesquisa o nome do medicamento — não faz
+    // parte da vitrine inicial nem dos filtros de categoria.
+    function renderRxList() {
+      const section = document.getElementById('rx-section');
+      const list = document.getElementById('rx-list');
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+
+      if (searchTerm === '') {
+        section.classList.add('hidden');
+        return;
+      }
+
+      const rxProducts = products.filter(p => {
+        if (p.requiresPrescription !== true) return false;
+        const searchTarget = `${p.title} ${p.description} ${p.marca || ''}`.toLowerCase();
+        return searchTarget.includes(searchTerm);
+      });
+
+      if (rxProducts.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      section.classList.remove('hidden');
+      list.innerHTML = rxProducts.map(product => `
+        <div class="flex items-center justify-between px-4 py-3 text-sm">
+          <div>
+            <span class="font-medium text-gray-800">${product.title}</span>
+            <span class="ml-2 text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded uppercase font-semibold">Requer receita</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-gray-700">R$ ${product.price.toFixed(2).replace('.', ',')}</span>
+            <button onclick="addToCart(${JSON.stringify(product.id)})" class="bg-brand-light text-brand px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-brand hover:text-white transition border border-blue-200">
+              Adicionar
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderMediaHtml(type, src, alt) {
+      if (type === 'video') {
+        return `<video src="${src}" controls autoplay class="w-full h-full object-cover rounded-xl"></video>`;
+      }
+      return `<img src="${src}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x500/EEF1FF/011472?text=${encodeURIComponent(alt)}';" />`;
+    }
+
+    function selectSize(btn, productId, size) {
+      selectedSizes[productId] = size;
+      const buttons = document.querySelectorAll(`.size-btn-${productId}`);
+      buttons.forEach(b => {
+        b.classList.remove('bg-brand', 'text-white', 'border-brand');
+        b.classList.add('border-gray-200');
+      });
+      btn.classList.add('bg-brand', 'text-white', 'border-brand');
+      btn.classList.remove('border-gray-200');
+    }
+
+    function selectCategory(category, btn) {
+      activeCategory = category;
+      document.querySelectorAll('.cat-btn').forEach(b => {
+        b.classList.remove('bg-brand', 'text-white', 'border-brand');
+        b.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+      });
+      btn.classList.add('bg-brand', 'text-white', 'border-brand');
+      btn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+
+      renderProducts();
+    }
+
+    // =========================================================================
+    // 🧰 PAINEL LATERAL DE FILTROS (Marca / Tamanho / Faixa de Preço)
+    // =========================================================================
+    function montarOpcoesDeFiltro() {
+      const marcas = [...new Set(products.map(p => p.marca).filter(Boolean))].sort();
+      const tamanhos = [...new Set(products.flatMap(p => p.sizes || []))].sort();
+
+      const marcasContainer = document.getElementById('filtro-marcas-opcoes');
+      const tamanhosContainer = document.getElementById('filtro-tamanhos-opcoes');
+
+      marcasContainer.innerHTML = marcas.length > 0
+        ? marcas.map(marca => `
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" value="${marca}" onchange="toggleFiltroMarca('${marca}', this.checked)" class="accent-brand" />
+              <span>${marca}</span>
+            </label>
+          `).join('')
+        : '<p class="text-xs text-gray-400">Nenhuma marca cadastrada.</p>';
+
+      tamanhosContainer.innerHTML = tamanhos.length > 0
+        ? tamanhos.map(tamanho => `
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" value="${tamanho}" onchange="toggleFiltroTamanho('${tamanho}', this.checked)" class="accent-brand" />
+              <span>${tamanho}</span>
+            </label>
+          `).join('')
+        : '<p class="text-xs text-gray-400">Nenhuma apresentação cadastrada.</p>';
+    }
+
+    function toggleFiltroMarca(marca, marcado) {
+      if (marcado) filtros.marcas.add(marca); else filtros.marcas.delete(marca);
+      atualizarContadorFiltros();
+    }
+
+    function toggleFiltroTamanho(tamanho, marcado) {
+      if (marcado) filtros.tamanhos.add(tamanho); else filtros.tamanhos.delete(tamanho);
+      atualizarContadorFiltros();
+    }
+
+    function setFiltroPreco(valor) {
+      filtros.faixaPreco = valor;
+      atualizarContadorFiltros();
+    }
+
+    function atualizarContadorFiltros() {
+      const total = filtros.marcas.size + filtros.tamanhos.size + (filtros.faixaPreco !== 'todos' ? 1 : 0);
+      const badge = document.getElementById('filtros-count');
+      if (total > 0) {
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+        badge.innerText = total;
+      } else {
+        badge.classList.add('hidden');
+        badge.classList.remove('flex');
+      }
+    }
+
+    function aplicarFiltros() {
+      renderProducts();
+      toggleFiltros();
+    }
+
+    function limparFiltros() {
+      filtros.marcas.clear();
+      filtros.tamanhos.clear();
+      filtros.faixaPreco = 'todos';
+      document.querySelectorAll('#filtro-marcas-opcoes input, #filtro-tamanhos-opcoes input').forEach(cb => cb.checked = false);
+      const radioTodos = document.querySelector('input[name="filtro_preco"][value="todos"]');
+      if (radioTodos) radioTodos.checked = true;
+      atualizarContadorFiltros();
+      renderProducts();
+    }
+
+    function toggleFiltros() {
+      const drawer = document.getElementById('filtros-drawer');
+      const overlay = document.getElementById('filtros-overlay');
+      const isOpen = !drawer.classList.contains('-translate-x-full');
+      if (isOpen) {
+        drawer.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      } else {
+        drawer.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    function destacarCampoObrigatorio(elementId) {
+
+
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      el.classList.add('ring-2', 'ring-red-400', 'rounded-lg');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-red-400', 'rounded-lg'), 1500);
+    }
+
+    function addToCart(productId) {
+      const product = products.find(p => p.id == productId);
+      let size = selectedSizes[productId];
+
+      if (!size && product.sizes.length === 1) size = product.sizes[0];
+
+      if (!size) {
+        destacarCampoObrigatorio(`size-group-${productId}`);
+        return;
+      }
+      if (product.disponivel === false) {
+        return;
+      }
+
+      const itemExistente = cart.find(item => item.title === product.title && item.size === size);
+      if (itemExistente) {
+        itemExistente.quantity += 1;
+      } else {
+        cart.push({ title: product.title, price: product.price, size: size, requiresPrescription: product.requiresPrescription === true, quantity: 1 });
+      }
+      localStorage.setItem('carrinho_vitalli', JSON.stringify(cart));
+      updateCart();
+      showToast();
+    }
+
+    function alterarQuantidade(index, delta) {
+      const item = cart[index];
+      if (!item) return;
+      item.quantity += delta;
+      if (item.quantity <= 0) {
+        cart.splice(index, 1);
+      }
+      localStorage.setItem('carrinho_vitalli', JSON.stringify(cart));
+      updateCart();
+    }
+
+    function updateCart() {
+      const totalItens = cart.reduce((soma, item) => soma + item.quantity, 0);
+      document.getElementById('cart-count').innerText = totalItens;
+      const itemsContainer = document.getElementById('cart-items');
+      const totalContainer = document.getElementById('cart-total');
+      const rxWarning = document.getElementById('rx-warning');
+      rxWarning.classList.toggle('hidden', !cart.some(item => item.requiresPrescription));
+
+      if (cart.length === 0) {
+        itemsContainer.innerHTML = '<p class="text-gray-500 text-center py-4">Sua cesta está vazia.</p>';
+        totalContainer.innerText = 'R$ 0,00';
+        return;
+      }
+
+      let total = 0;
+      itemsContainer.innerHTML = cart.map((item, index) => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+        return `
+          <div class="flex justify-between items-center bg-brand-light p-2.5 rounded-xl border border-blue-100">
+            <div>
+              <span class="font-medium text-gray-800 block">${item.title}</span>
+              <div class="flex gap-1 mt-1 flex-wrap items-center">
+                <span class="text-[10px] bg-brand/10 text-brand font-bold px-1.5 py-0.5 rounded">${item.size}</span>
+                ${item.requiresPrescription ? '<span class="text-[10px] bg-amber-100 text-amber-800 font-semibold px-1.5 py-0.5 rounded">Requer receita</span>' : ''}
+              </div>
+              <div class="flex items-center gap-2 mt-2">
+                <button onclick="alterarQuantidade(${index}, -1)" class="w-6 h-6 rounded-full bg-white border border-blue-200 text-brand font-bold flex items-center justify-center hover:bg-brand hover:text-white transition text-xs">−</button>
+                <span class="text-xs font-bold w-4 text-center">${item.quantity}</span>
+                <button onclick="alterarQuantidade(${index}, 1)" class="w-6 h-6 rounded-full bg-white border border-blue-200 text-brand font-bold flex items-center justify-center hover:bg-brand hover:text-white transition text-xs">+</button>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-brand">R$ ${subtotal.toFixed(2).replace('.', ',')}</span>
+              <button onclick="removeFromCart(${index})" class="text-gray-400 hover:text-red-500 font-bold text-sm px-1">&times;</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      totalContainer.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      localStorage.setItem('carrinho_vitalli', JSON.stringify(cart));
+      updateCart();
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast-added');
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+    }
+
+    function toggleCart() {
+      const modal = document.getElementById('cart-modal');
+      modal.classList.toggle('hidden');
+      modal.classList.toggle('flex');
+    }
+
+    function acompanharPedido() {
+      const mensagem = `Olá! Gostaria de acompanhar o status do meu pedido na ${NOME_FARMACIA}.`;
+      window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    }
+
+    function checkout() {
+      if (cart.length === 0) {
+        alert('Adicione produtos à cesta primeiro!');
+        return;
+      }
+
+      const deliveryType = document.querySelector('input[name="delivery_type"]:checked').value;
+
+      let summary = `Olá! Gostaria de fazer o seguinte pedido na ${NOME_FARMACIA}:\n\n`;
+      let total = 0;
+      let temReceita = false;
+      cart.forEach((item, i) => {
+        const subtotal = item.price * item.quantity;
+        summary += `${i+1}. *${item.title}*\n   • Apresentação: ${item.size}\n   • Quantidade: ${item.quantity}\n   • Valor: R$ ${subtotal.toFixed(2).replace('.', ',')}${item.requiresPrescription ? '\n   • ⚠️ Requer receita médica' : ''}\n\n`;
+        total += subtotal;
+        if (item.requiresPrescription) temReceita = true;
+      });
+
+      summary += `*Opção de Entrega:* ${deliveryType}\n`;
+      summary += `*Total do Pedido: R$ ${total.toFixed(2).replace('.', ',')}*\n\n`;
+      if (temReceita) {
+        summary += "⚠️ Este pedido inclui item(ns) sob prescrição — vou enviar a foto da receita nesta conversa em seguida.\n\n";
+      }
+      summary += "Por favor, me informe a disponibilidade e os dados para pagamento!";
+
+      window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(summary)}`, '_blank');
+
+      cart = [];
+      localStorage.setItem('carrinho_vitalli', JSON.stringify(cart));
+      updateCart();
+    }
+  </script>
+</body>
+</html>
