@@ -39,6 +39,11 @@
     const NOME_FARMACIA = "Drogaria Vitalli";
     const FARMACEUTICO_RESPONSAVEL = "Franklin Santos Vieira";
     const CRF_NUMERO = "CRF-XX 00000";
+    const RAZAO_SOCIAL = "Drogaria Vitalli";
+    const CNPJ_FARMACIA = "61.901.711/0001-21";
+    const ENDERECO_FARMACIA = "Rua Luziânia S/N Qd 26 Lt 12 Jofre";
+    const HORARIO_SEMANA = "Segunda à Sexta: 7h às 21h";
+    const HORARIO_FIM_DE_SEMANA = "Sábados e Feriados: 8h às 18h";
   </script>
 
   <!-- Barra utilitária superior -->
@@ -197,24 +202,19 @@
       <div class="flex flex-col items-center gap-1"><span class="text-xl">◈</span>Pague com Pix</div>
     </div>
 
-    <!-- Nova seção: Endereço e Horários de Entrega -->
-    <div class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-gray-600 border-b border-gray-100">
-      <div class="text-center md:text-left">
-        <p class="font-bold text-gray-700 mb-1">📍 Nosso Endereço</p>
-        <p>Rua Luziânia S/N Qd 26 Lt 12 Jofre</p>
-      </div>
-      <div class="text-center md:text-right">
-        <p class="font-bold text-gray-700 mb-1">🕥 Horários de Entrega</p>
-        <p>Segunda à Sexta: 7h às 21h</p>
-        <p>Sábados e Feriados: 8h às 18h</p>
-      </div>
+    <div class="max-w-6xl mx-auto px-4 py-6 text-center border-b border-gray-100">
+      <p class="font-bold text-gray-800 text-sm mb-1">📍 Nosso Endereço</p>
+      <p id="rodape-endereco" class="text-xs text-gray-600 mb-4"></p>
+
+      <p class="font-bold text-gray-800 text-sm mb-1">🕒 Horários de Entrega</p>
+      <p id="rodape-horario-semana" class="text-xs text-gray-600"></p>
+      <p id="rodape-horario-fds" class="text-xs text-gray-600"></p>
     </div>
 
-    <!-- Dados Jurídicos e Regulatórios -->
-    <div class="text-center py-6 px-4 text-[11px] text-gray-500 space-y-1">
+    <div class="text-center py-6 px-4 text-[11px] text-gray-500">
       <p id="rodape-farmaceutico">Farmacêutico(a) Responsável: — CRF</p>
-      <p>Razão Social: [Drogaria Vitalli] | CNPJ: [61.901.711/0001-21]</p>
-      <p class="pt-2 text-gray-400">Consulte sempre um médico ou farmacêutico antes de utilizar qualquer medicamento.</p>
+      <p id="rodape-razao-social" class="mt-1"></p>
+      <p class="mt-3 text-gray-400">Consulte sempre um médico ou farmacêutico antes de utilizar qualquer medicamento.</p>
     </div>
   </footer>
 
@@ -290,13 +290,57 @@
         <span class="font-bold text-gray-800 block mb-1">Como deseja receber seu pedido?</span>
         <div class="flex gap-4">
           <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name="delivery_type" value="Retirar na Loja" checked class="text-brand accent-brand" />
+            <input type="radio" name="delivery_type" value="Retirar na Loja" checked onchange="toggleEnderecoEntrega()" class="text-brand accent-brand" />
             <span>Retirar na Loja</span>
           </label>
           <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name="delivery_type" value="Entrega Local" class="text-brand accent-brand" />
+            <input type="radio" name="delivery_type" value="Entrega Local" onchange="toggleEnderecoEntrega()" class="text-brand accent-brand" />
             <span>Entrega Local</span>
           </label>
+        </div>
+      </div>
+
+      <div id="endereco-wrapper" class="hidden mb-4 bg-brand-light p-3 rounded-xl border border-blue-100 text-xs">
+        <label class="font-bold text-gray-800 block mb-1">Endereço de entrega</label>
+        <input type="text" id="endereco-entrega" placeholder="Rua, número, bairro, complemento..." class="w-full border border-blue-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand" />
+      </div>
+
+      <div class="mb-4 bg-brand-light p-3 rounded-xl border border-blue-100 text-xs">
+        <span class="font-bold text-gray-800 block mb-1">Forma de pagamento</span>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="payment_type" value="Pix" checked onchange="togglePagamentoDinheiro()" class="accent-brand" />
+            <span>Pix</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="payment_type" value="Cartão de Débito" onchange="togglePagamentoDinheiro()" class="accent-brand" />
+            <span>Débito</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="payment_type" value="Cartão de Crédito" onchange="togglePagamentoDinheiro()" class="accent-brand" />
+            <span>Crédito</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name="payment_type" value="Dinheiro" onchange="togglePagamentoDinheiro()" class="accent-brand" />
+            <span>Dinheiro</span>
+          </label>
+        </div>
+
+        <div id="troco-wrapper" class="hidden mt-3 pt-3 border-t border-blue-200">
+          <span class="font-medium text-gray-700 block mb-1">Precisa de troco?</span>
+          <div class="flex gap-4 mb-2">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name="precisa_troco" value="sim" onchange="toggleValorTroco()" class="accent-brand" />
+              <span>Sim</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="radio" name="precisa_troco" value="nao" checked onchange="toggleValorTroco()" class="accent-brand" />
+              <span>Não</span>
+            </label>
+          </div>
+          <div id="valor-troco-wrapper" class="hidden">
+            <input type="text" id="valor-troco" placeholder="Troco para quanto? (ex: R$ 100,00)" class="w-full border border-blue-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-brand" />
+          </div>
         </div>
       </div>
 
@@ -1582,6 +1626,14 @@ let products = [
       document.title = `${NOME_FARMACIA} - Catálogo Online`;
       const rodapeInfo = document.getElementById('rodape-farmaceutico');
       if (rodapeInfo) rodapeInfo.innerText = `Farmacêutico(a) Responsável: ${FARMACEUTICO_RESPONSAVEL} — ${CRF_NUMERO}`;
+      const rodapeRazaoSocial = document.getElementById('rodape-razao-social');
+      if (rodapeRazaoSocial) rodapeRazaoSocial.innerText = `Razão Social: ${RAZAO_SOCIAL} | CNPJ: ${CNPJ_FARMACIA}`;
+      const rodapeEndereco = document.getElementById('rodape-endereco');
+      if (rodapeEndereco) rodapeEndereco.innerText = ENDERECO_FARMACIA;
+      const rodapeHorarioSemana = document.getElementById('rodape-horario-semana');
+      if (rodapeHorarioSemana) rodapeHorarioSemana.innerText = HORARIO_SEMANA;
+      const rodapeHorarioFds = document.getElementById('rodape-horario-fds');
+      if (rodapeHorarioFds) rodapeHorarioFds.innerText = HORARIO_FIM_DE_SEMANA;
       inicializarDestaques();
       inicializarProdutos();
     });
@@ -2009,6 +2061,25 @@ let products = [
       modal.classList.toggle('flex');
     }
 
+    function toggleEnderecoEntrega() {
+      const tipo = document.querySelector('input[name="delivery_type"]:checked').value;
+      document.getElementById('endereco-wrapper').classList.toggle('hidden', tipo !== 'Entrega Local');
+    }
+
+    function togglePagamentoDinheiro() {
+      const forma = document.querySelector('input[name="payment_type"]:checked').value;
+      const trocoWrapper = document.getElementById('troco-wrapper');
+      trocoWrapper.classList.toggle('hidden', forma !== 'Dinheiro');
+      if (forma !== 'Dinheiro') {
+        document.getElementById('valor-troco-wrapper').classList.add('hidden');
+      }
+    }
+
+    function toggleValorTroco() {
+      const precisa = document.querySelector('input[name="precisa_troco"]:checked').value;
+      document.getElementById('valor-troco-wrapper').classList.toggle('hidden', precisa !== 'sim');
+    }
+
     function acompanharPedido() {
       const mensagem = `Olá! Gostaria de acompanhar o status do meu pedido na ${NOME_FARMACIA}.`;
       window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensagem)}`, '_blank');
@@ -2021,6 +2092,22 @@ let products = [
       }
 
       const deliveryType = document.querySelector('input[name="delivery_type"]:checked').value;
+      const endereco = document.getElementById('endereco-entrega').value.trim();
+      if (deliveryType === 'Entrega Local' && endereco === '') {
+        destacarCampoObrigatorio('endereco-wrapper');
+        document.getElementById('endereco-entrega').focus();
+        return;
+      }
+
+      const paymentType = document.querySelector('input[name="payment_type"]:checked').value;
+      const precisaTrocoEl = document.querySelector('input[name="precisa_troco"]:checked');
+      const precisaTroco = paymentType === 'Dinheiro' && precisaTrocoEl && precisaTrocoEl.value === 'sim';
+      const valorTroco = document.getElementById('valor-troco').value.trim();
+      if (precisaTroco && valorTroco === '') {
+        destacarCampoObrigatorio('valor-troco-wrapper');
+        document.getElementById('valor-troco').focus();
+        return;
+      }
 
       let summary = `Olá! Gostaria de fazer o seguinte pedido na ${NOME_FARMACIA}:\n\n`;
       let total = 0;
@@ -2033,6 +2120,13 @@ let products = [
       });
 
       summary += `*Opção de Entrega:* ${deliveryType}\n`;
+      if (deliveryType === 'Entrega Local') {
+        summary += `*Endereço:* ${endereco}\n`;
+      }
+      summary += `*Forma de Pagamento:* ${paymentType}\n`;
+      if (paymentType === 'Dinheiro') {
+        summary += precisaTroco ? `*Precisa de troco para:* R$ ${valorTroco}\n` : `*Troco:* Não precisa\n`;
+      }
       summary += `*Total do Pedido: R$ ${total.toFixed(2).replace('.', ',')}*\n\n`;
       if (temReceita) {
         summary += "⚠️ Este pedido inclui item(ns) sob prescrição — vou enviar a foto da receita nesta conversa em seguida.\n\n";
@@ -2043,6 +2137,8 @@ let products = [
 
       cart = [];
       localStorage.setItem('carrinho_vitalli', JSON.stringify(cart));
+      document.getElementById('endereco-entrega').value = '';
+      document.getElementById('valor-troco').value = '';
       updateCart();
     }
   </script>
